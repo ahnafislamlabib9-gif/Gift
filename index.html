@@ -1,226 +1,397 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>A Valentine Surprise</title>
-    <style>
-        :root {
-            --primary: #ff4d6d;
-            --secondary: #ff85a1;
-            --bg: #ffe4e1;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Bouquet For You</title>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: radial-gradient(circle at center, #592037 0%, #2a111f 50%, #0d080c 100%);
+      font-family: 'Georgia', serif;
+    }
+    
+    #flowerCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
 
-        body {
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background-color: var(--bg);
-            font-family: 'Inter', sans-serif;
-            overflow: hidden;
-            transition: background 1s ease;
-        }
+    #messageContainer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 2;
+      pointer-events: none;
+    }
 
-        /* Floating Hearts Animation */
-        .heart {
-            position: absolute;
-            color: var(--primary);
-            font-size: 20px;
-            pointer-events: none;
-            z-index: -1;
-            animation: float 4s linear forwards;
-        }
+    .message {
+      position: absolute;
+      background: rgba(80, 20, 40, 0.6);
+      border: 1px solid rgba(255, 120, 140, 0.5);
+      box-shadow: 0 0 20px rgba(255, 120, 140, 0.4);
+      color: #fff0f3;
+      padding: 12px 24px;
+      border-radius: 30px;
+      font-size: 15px;
+      letter-spacing: 1px;
+      text-align: center;
+      white-space: nowrap;
+      
+      opacity: 0;
+      transform: translateY(20px) scale(0.9);
+      transition: opacity 2.5s ease-in-out, transform 2.5s ease-out;
+    }
 
-        @keyframes float {
-            0% { transform: translateY(100vh) scale(0); opacity: 1; }
-            100% { transform: translateY(-10vh) scale(1.5); opacity: 0; }
-        }
+    .message.visible {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
 
-        #card {
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(5px);
-            padding: 2rem;
-            border-radius: 2rem;
-            box-shadow: 0 15px 35px rgba(255, 77, 109, 0.2);
-            text-align: center;
-            width: 85%;
-            max-width: 400px;
-            position: relative;
-            z-index: 10;
-        }
-
-        .page { display: none; }
-        .active { display: block; animation: fadeIn 0.8s ease-out; }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: scale(0.9); }
-            to { opacity: 1; transform: scale(1); }
-        }
-
-        img.main-img {
-            width: 100%;
-            max-height: 250px;
-            object-fit: cover;
-            border-radius: 20px;
-            margin-bottom: 1rem;
-            box-shadow: 0 0 20px rgba(255, 77, 109, 0.3);
-        }
-
-        /* Special Glow for Photo Page */
-        .photo-glow {
-            border: 4px solid white;
-            animation: glow 2s infinite alternate;
-        }
-
-        @keyframes glow {
-            from { box-shadow: 0 0 10px #fff, 0 0 20px #ff4d6d; }
-            to { box-shadow: 0 0 20px #fff, 0 0 40px #ff85a1; }
-        }
-
-        h1 { color: var(--primary); font-size: 1.5rem; }
-
-        /* GIFT BOX STYLES */
-        .gift-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin: 20px 0;
-        }
-
-        .gift-box {
-            background: var(--primary);
-            height: 80px;
-            border-radius: 15px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            font-size: 2rem;
-            color: white;
-            transition: 0.3s;
-            border: 3px solid white;
-        }
-
-        .gift-box.opened {
-            background: #fff;
-            color: var(--primary);
-            border: 2px dashed var(--primary);
-            font-size: 0.8rem;
-            padding: 5px;
-        }
-
-        /* BUTTONS */
-        button {
-            padding: 12px 28px;
-            font-size: 1rem;
-            font-weight: bold;
-            border: none;
-            border-radius: 50px;
-            cursor: pointer;
-            background-color: var(--primary);
-            color: white;
-            box-shadow: 0 4px 15px rgba(255, 77, 109, 0.3);
-        }
-
-        #no-btn { background-color: #adb5bd; margin-left: 10px; transition: 0.2s; }
-        .next-btn { width: 100%; margin-top: 15px; }
-        .hidden { display: none; }
-    </style>
+    @media (max-width: 600px) {
+      .message {
+        font-size: 13px;
+        padding: 10px 18px;
+      }
+    }
+  </style>
 </head>
 <body>
 
-    <audio id="loveMusic" loop>
-        <source src="https://www.bensound.com/bensound-music/bensound-love.mp3" type="audio/mpeg">
-    </audio>
+<canvas id="flowerCanvas"></canvas>
+<div id="messageContainer"></div>
 
-    <div id="card">
-        <div id="page1" class="page active">
-            <img class="main-img" src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExOHpmeG53M2lyZ3JpZno3ZnhueHBybm54eHBybm54eHBybm54eCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/cLS1cfxvGOPVpf9g3y/giphy.gif">
-            <h1 id="proposal-text">Will you be my Valentine?</h1>
-            <button id="yes-btn" onclick="startExperience()">Yes</button>
-            <button id="no-btn">No</button>
-        </div>
+<script>
+  (function() {
+    'use strict';
 
-        <div id="page2" class="page">
-            <h1>Gifts for You! 🎁</h1>
-            <div class="gift-container">
-                <div class="gift-box" onclick="openGift(this, '🎟️ Online Movie Night')">🎁</div>
-                <div class="gift-box" onclick="openGift(this, '🎮 Duo Gaming Date')">🎁</div>
-                <div class="gift-box" onclick="openGift(this, '🍕 Will cook for you on the 1st day of our wedding')">🎁</div>
-                <div class="gift-box" onclick="openGift(this, '📱 3h voice Call')">🎁</div>
-            </div>
-            <button id="gift-next" class="hidden next-btn" onclick="nextPage(3)">See More! →</button>
-        </div>
+    const canvas = document.getElementById('flowerCanvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+    let particles = [];
+    let flowers = [];
+    let time = 0;
+    
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const PARTICLE_COUNT = isMobile ? 40 : 80;
 
-        <div id="page3" class="page">
-            <h1>My Favorite View... ❤️</h1>
-            <img class="main-img photo-glow" src="https://i.postimg.cc/xTwHc9VY/IMG-17687362927272817.jpg" alt="Us">
-            <p style="font-style: italic; color: #d63384;">"Every moment with you is like a dream."</p>
-            <button class="next-btn" onclick="nextPage(4)">Last Surprise →</button>
-        </div>
+    const messagesPool = [
+      "My whole heart", "Treasure every moment", "You make life beautiful",
+      "Always yours", "You are my everything", "Thinking of you constantly",
+      "My favorite person", "I love your smile", "Forever and always",
+      "You are my sunshine", "Lucky to have you", "Endless love",
+      "Just for you", "You're my safe place", "More than words can say"
+    ];
 
-        <div id="page4" class="page">
-            <img class="main-img" src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExOHpmeG53M2lyZ3JpZno3ZnhueHBybm54eHBybm54eHBybm54eCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/MDJ9IbxxvDUQM/giphy.gif">
-            <h1>Official Valentine! ❤️</h1>
-            <p>Be ready cuz we are about to embark on a new journey babyy!</p>
-        </div>
-    </div>
+    function spawnMessage() {
+      const container = document.getElementById('messageContainer');
+      const msg = document.createElement('div');
+      msg.className = 'message';
+      msg.innerText = messagesPool[Math.floor(Math.random() * messagesPool.length)];
+      
+      let left, top;
+      let attempts = 0;
+      do {
+        left = 5 + Math.random() * 60; 
+        top = 10 + Math.random() * 80; 
+        attempts++;
+      } while (
+        (left > 25 && left < 70 && top > 25 && top < 80) && attempts < 50
+      );
+      
+      msg.style.left = left + '%';
+      msg.style.top = top + '%';
+      container.appendChild(msg);
+      
+      setTimeout(() => msg.classList.add('visible'), 100);
+      
+      const visibleDuration = 4000 + Math.random() * 3000;
+      setTimeout(() => {
+        msg.classList.remove('visible');
+        setTimeout(() => msg.remove(), 2500);
+      }, visibleDuration);
+    }
 
-    <script>
-        let yesScale = 1;
-        let openedGifts = 0;
-        const noMessages = ["Sure?", "Please?", "Think again!", "💔?", "Click Yes!"];
-        let msgIndex = 0;
+    function startMessageLoop() {
+      spawnMessage();
+      setTimeout(spawnMessage, 1500);
+      setInterval(() => {
+        spawnMessage();
+      }, 3500);
+    }
 
-        const music = document.getElementById('loveMusic');
-        const yesBtn = document.getElementById('yes-btn');
-        const noBtn = document.getElementById('no-btn');
+    function resize() {
+      width = canvas.width = window.innerWidth || document.documentElement.clientWidth || 300;
+      height = canvas.height = window.innerHeight || document.documentElement.clientHeight || 500;
+      initBouquet();
+    }
+    window.addEventListener('resize', resize);
 
-        // Initial Logic
-        noBtn.addEventListener('click', () => {
-            document.getElementById('proposal-text').innerText = noMessages[msgIndex];
-            msgIndex = (msgIndex + 1) % noMessages.length;
-            yesScale += 0.5;
-            yesBtn.style.transform = `scale(${yesScale})`;
-        });
+    function drawLeaf(x, y, rotation, scale, color1, color2) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(rotation);
+      ctx.scale(scale, scale);
+      
+      const sway = Math.sin(time * 0.01 + x) * 0.03;
+      ctx.rotate(sway);
 
-        function startExperience() {
-            music.play().catch(e => console.log("Music needs interaction first"));
-            nextPage(2);
-            setInterval(createHeart, 300); // Start heart rain
+      const leafGrd = ctx.createLinearGradient(0, 0, 0, -80);
+      leafGrd.addColorStop(0, color1);
+      leafGrd.addColorStop(1, color2);
+      
+      ctx.fillStyle = leafGrd;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.quadraticCurveTo(30, -40, 0, -80);
+      ctx.quadraticCurveTo(-30, -40, 0, 0);
+      ctx.fill();
+      
+      ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.quadraticCurveTo(5, -40, 0, -75);
+      ctx.stroke();
+      
+      ctx.restore();
+    }
+
+    function drawFern(x, y, rotation, scale) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(rotation);
+      ctx.scale(scale, scale);
+      
+      const sway = Math.sin(time * 0.015 + x) * 0.04;
+      ctx.rotate(sway);
+
+      ctx.fillStyle = '#2d5a45';
+      ctx.strokeStyle = '#1e3d2f';
+      ctx.lineWidth = 2;
+
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.quadraticCurveTo(10, -50, 0, -100);
+      ctx.stroke();
+
+      for(let i = 10; i < 90; i+= 8) {
+        let leafSize = Math.max(0.1, (100 - i) * 0.15); 
+        let localSway = Math.sin(time * 0.03 + i) * 2;
+        
+        ctx.beginPath();
+        ctx.ellipse(5 + leafSize + localSway, -i, leafSize * 2, leafSize * 0.7, Math.PI / 6, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.beginPath();
+        ctx.ellipse(-5 - leafSize + localSway, -i, leafSize * 2, leafSize * 0.7, -Math.PI / 6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    // --- ULTRA-REALISTIC FRANGIPANI CLASS ---
+    class Frangipani {
+      constructor(xOffset, yOffset, targetScale, delay) {
+        this.xOffset = xOffset;
+        this.yOffset = yOffset;
+        this.targetScale = targetScale;
+        this.delay = delay;
+        this.bloom = 0;
+        this.swaySpeed = 0.01 + Math.random() * 0.01;
+        this.swaySeed = Math.random() * Math.PI * 2;
+        this.rotationOffset = (Math.random() - 0.5) * 0.5;
+      }
+
+      draw(cx, cy, globalScale) {
+        if (time > this.delay && this.bloom < this.targetScale) {
+          this.bloom += (this.targetScale - this.bloom) * 0.02;
+        }
+        
+        if (this.bloom <= 0.01) return;
+
+        ctx.save();
+        
+        const x = cx + (this.xOffset * globalScale);
+        const y = cy + (this.yOffset * globalScale);
+        ctx.translate(x, y);
+        
+        const sway = Math.sin(time * this.swaySpeed + this.swaySeed) * 0.08;
+        ctx.rotate(this.rotationOffset + sway);
+        
+        ctx.scale(this.bloom * globalScale, this.bloom * globalScale);
+        
+        // Realistic 5 overlapping Frangipani petals with organic pinwheel twist shape
+        for(let j = 0; j < 5; j++) {
+          ctx.save();
+          ctx.rotate((j * 2 * Math.PI / 5));
+          
+          // Realistic petal shadow for depth
+          ctx.shadowBlur = 4;
+          ctx.shadowColor = 'rgba(0,0,0,0.3)';
+          ctx.shadowOffsetY = 3;
+
+          // Multi-stop radial gradient for fleshy petal texture and soft edges
+          const petalGrd = ctx.createRadialGradient(0, -22, 2, 0, -22, 32);
+          petalGrd.addColorStop(0, '#ffffff');
+          petalGrd.addColorStop(0.35, '#fffceb'); // Warm inner ivory
+          petalGrd.addColorStop(0.75, '#f4f0d8'); // Deeper rich tone near tips
+          petalGrd.addColorStop(1, 'rgba(230, 220, 190, 0)');
+
+          ctx.fillStyle = petalGrd;
+          ctx.beginPath();
+          // Organic curved spatula petal outline (characteristic of frangipanis)
+          ctx.moveTo(0, 0);
+          ctx.bezierCurveTo(18, -10, 26, -30, 12, -48);
+          ctx.bezierCurveTo(5, -54, -5, -54, -12, -48);
+          ctx.bezierCurveTo(-26, -30, -18, -10, 0, 0);
+          ctx.closePath();
+          ctx.fill();
+
+          // Clear shadows for finer line details
+          ctx.shadowBlur = 0;
+          ctx.shadowOffsetY = 0;
+
+          // Subtle organic vein shading along the center of each petal
+          ctx.strokeStyle = 'rgba(210, 195, 150, 0.35)';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(0, -4);
+          ctx.lineTo(0, -42);
+          ctx.stroke();
+
+          ctx.restore();
+        }
+        
+        // Highly realistic dense central core (golden-yellow center with deep pinwheel pocket)
+        const centerGrd = ctx.createRadialGradient(0, 0, 0, 0, 0, 9);
+        centerGrd.addColorStop(0, '#ff8f00'); // Deep rich yellow-orange center
+        centerGrd.addColorStop(0.5, '#ffca28');
+        centerGrd.addColorStop(0.85, '#fff176');
+        centerGrd.addColorStop(1, 'rgba(255, 235, 59, 0)');
+
+        ctx.fillStyle = centerGrd;
+        ctx.beginPath();
+        ctx.arc(0, 0, 9, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Tiny textural dots/stamen details inside the yellow center ring
+        ctx.fillStyle = '#e65100';
+        for(let i = 0; i < 7; i++) {
+          let angleDot = (i * Math.PI * 2) / 7;
+          let rDot = 3.5;
+          let dx = Math.cos(angleDot) * rDot;
+          let dy = Math.sin(angleDot) * rDot;
+          ctx.beginPath();
+          ctx.arc(dx, dy, 0.9, 0, Math.PI * 2);
+          ctx.fill();
         }
 
-        // Heart Background Effect
-        function createHeart() {
-            const heart = document.createElement('div');
-            heart.classList.add('heart');
-            heart.innerHTML = '❤️';
-            heart.style.left = Math.random() * 100 + 'vw';
-            heart.style.animationDuration = (Math.random() * 2 + 3) + 's';
-            document.body.appendChild(heart);
-            setTimeout(() => heart.remove(), 4000);
-        }
+        ctx.restore();
+      }
+    }
 
-        // Gift Logic
-        function openGift(element, content) {
-            if (element.classList.contains('opened')) return;
-            element.innerHTML = "✨";
-            setTimeout(() => {
-                element.classList.add('opened');
-                element.innerHTML = content;
-                openedGifts++;
-                if (openedGifts === 4) document.getElementById('gift-next').classList.remove('hidden');
-            }, 400);
-        }
+    function initBouquet() {
+      flowers = [];
+      flowers.push(new Frangipani(-65, -35, 1.3, 50));  
+      flowers.push(new Frangipani(65, -35, 1.3, 80));   
+      flowers.push(new Frangipani(-75, 45, 1.4, 110));  
+      flowers.push(new Frangipani(75, 45, 1.4, 140));   
+      flowers.push(new Frangipani(0, 10, 1.9, 10));     
+    }
 
-        // Navigation
-        function nextPage(pageNum) {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.getElementById('page' + pageNum).classList.add('active');
-            if(pageNum === 3) document.body.style.background = "#ffccd5";
-        }
-    </script>
+    class GlowParticle {
+      constructor() {
+        this.reset(true);
+      }
+      reset(firstTime = false) {
+        this.x = Math.random() * width;
+        this.y = firstTime ? Math.random() * height : height + 10;
+        this.vx = (Math.random() - 0.5) * 0.2;
+        this.vy = -(0.2 + Math.random() * 0.3);
+        this.size = 2 + Math.random() * 3;
+        this.swaySeed = Math.random() * Math.PI * 2;
+        this.color = Math.random() > 0.5 ? '#ffe0e5' : '#fff9d0';
+        this.opacity = 0;
+      }
+      update() {
+        this.x += this.vx + Math.sin(time * 0.01 + this.swaySeed) * 0.3;
+        this.y += this.vy;
+        
+        if (this.opacity < 0.9 && this.y > 50) this.opacity += 0.005;
+        else if (this.y < 50) this.opacity -= 0.02;
+
+        if (this.y < -10 || this.opacity <= 0) this.reset();
+      }
+      draw() {
+        ctx.globalAlpha = Math.max(0, this.opacity);
+        ctx.fillStyle = this.color;
+        
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = this.color;
+        
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.shadowBlur = 0; 
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    function loop() {
+      time++;
+      ctx.clearRect(0, 0, width, height);
+
+      const cx = width / 2;
+      const cy = height / 2 + (isMobile ? 20 : 50); 
+      const globalScale = Math.max(0.4, Math.min(width, height) / 800); 
+
+      drawFern(cx - 80 * globalScale, cy + 40 * globalScale, -0.6, 1.2 * globalScale);
+      drawFern(cx + 80 * globalScale, cy + 40 * globalScale, 0.6, 1.2 * globalScale);
+      drawFern(cx - 30 * globalScale, cy - 20 * globalScale, -0.3, 1.4 * globalScale);
+      drawFern(cx + 30 * globalScale, cy - 20 * globalScale, 0.3, 1.4 * globalScale);
+      
+      drawLeaf(cx - 100 * globalScale, cy + 80 * globalScale, -1.2, 1.5 * globalScale, '#1b4332', '#40916c');
+      drawLeaf(cx + 100 * globalScale, cy + 80 * globalScale, 1.2, 1.5 * globalScale, '#1b4332', '#40916c');
+      drawLeaf(cx, cy - 50 * globalScale, 0, 1.3 * globalScale, '#2d6a4f', '#74c69d');
+
+      drawLeaf(cx - 40 * globalScale, cy + 90 * globalScale, -0.8, 1 * globalScale, '#081c15', '#2d6a4f');
+      drawLeaf(cx + 40 * globalScale, cy + 90 * globalScale, 0.8, 1 * globalScale, '#081c15', '#2d6a4f');
+
+      flowers.forEach(flower => flower.draw(cx, cy, globalScale));
+
+      particles.forEach(p => {
+        p.update();
+        p.draw();
+      });
+
+      requestAnimationFrame(loop);
+    }
+
+    window.addEventListener('load', () => {
+      resize();
+      
+      particles = [];
+      for (let i = 0; i < PARTICLE_COUNT; i++) {
+        particles.push(new GlowParticle());
+      }
+      
+      startMessageLoop();
+      loop();
+    });
+
+  })();
+</script>
+
 </body>
-  </html>
+</html>
